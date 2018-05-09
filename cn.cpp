@@ -1,5 +1,5 @@
 /*
- *                Solving HH model with Backward Euler method
+ *                Solving HH model with Crank-Nicholson method
  *
  *     dv      1   /                                                        \
  *     ---  = ----*| I - g_Na*m³*h(v-E_Na) - G_K*n⁴(v - E_K) - gl(v - El)   |
@@ -20,22 +20,23 @@ static const double PERIOD = 0.1;
 static const double E_k  = -72.14;   // Resting potential of Potatium channel (mV)
 static const double E_Na = 55.17;    // Resting potential of Sodium channel   (mV)
 static const double E_l  = -49.42;   // Resting potential of passive membrane (mV)
-static       double g_K  = 0.36;     //  ion channels conductances (mS/cm²)
-static       double g_Na = 1.2;      //  ion channels conductances (mS/cm²)
-static       double g_l  = 0.003;    //  ion channels conductances (mS/cm²)
+static const double g_K  = 0.36;     //  ion channels conductances (mS/cm²)
+static const double g_Na = 1.2;      //  ion channels conductances (mS/cm²)
+static const double g_l  = 0.003;    //  ion channels conductances (mS/cm²)
 
-static double Cm      = 0.01;        //  Membrane capacitance (µF/cm²)
-static double I       = 0.0;
+static double Cm         = 0.01;     //  Membrane capacitance (µF/cm²)
+static double I          = 0.0;
 
-static double v_prev  = -60.0;       //  Potential at t = n
-static double v       = -60.0;       //  Potential at t = n+1
-static double n       = 0.0;         // state variable at t = n+½
-static double m       = 0.0;         // state variable at t = n+½
-static double h       = 0.0;         // state variable at t = n+½
+static double v_prev     = -60.0;    //  Potential at t = n
+static double v          = -60.0;    //  Potential at t = n+1
+
+static double n          = 0.0;      // state variable at t = n+½
+static double m          = 0.0;      // state variable at t = n+½
+static double h          = 0.0;      // state variable at t = n+½
  
-static double n_prev  = 0.0;         // state variable at t = n-½
-static double m_prev  = 0.0;         // state variable at t = n-½
-static double h_prev  = 0.0;         // state variable at t = n-½
+static double n_prev     = 0.0;      // state variable at t = n-½
+static double m_prev     = 0.0;      // state variable at t = n-½
+static double h_prev     = 0.0;      // state variable at t = n-½
 
 static const double delta_t = 0.05; // timestep size (ms) 
 static const double delta_t_inv = 1.0/ delta_t;
@@ -91,9 +92,9 @@ void backward_euler (double I) {
     // solve potential
     double G_Na = g_Na*m*m*m*h;
     double G_K  = g_K*n*n*n*n;
-    double new_v = 2*delta_t * ( I + G_Na*E_Na + G_k*E_k + g_l*E_l);
+    double new_v = 2*delta_t * ( I + G_Na*E_Na + G_K*E_k + g_l*E_l);
     //     new_v = ------------------------------------------------
-    new_v       /= (2*c_m + (G_Na + G_k + G_l)*delta_t);
+    new_v       /= (2*Cm + (G_Na + G_K + g_l)*delta_t);
     new_v += v;
     v_prev = v;
     v = new_v;
@@ -107,13 +108,13 @@ void backward_euler (double I) {
      
      double  gamma_m       = (get_alpha_m(v) + get_beta_m(v))/2.0;
      double new_m =  get_alpha_m(v)*1.0/(delta_t_inv + gamma_m); 
-     new_m -= n_prev *(gamma - delta_t_inv)/(gamma + delta_t_inv);
+     new_m       -= n_prev *(gamma_m - delta_t_inv)/(gamma_m + delta_t_inv);
      m_prev = m;
      m = new_m; 
      
      double gamma_h       = (get_alpha_h(v) + get_beta_h(v))/2.0;
      double new_h =  get_alpha_h(v)*1.0/(delta_t_inv + gamma_h); 
-     double new_h -= n_prev *(gamma_h - delta_t_inv)/(gamma_h + delta_t_inv);
+     new_h       -= n_prev *(gamma_h - delta_t_inv)/(gamma_h + delta_t_inv);
      h_prev = h;
      h = new_h;
 }
@@ -149,8 +150,8 @@ void printHeader () {
 }
 
 void print (double t) {
-   std::cout << t << "," << "ForwardEuler," 
-             << v_euler << ","
+   std::cout << t << "," << "CrankNicholson," 
+             << v << ","
              << n << ","
              << m << ","
              << h << ","
@@ -161,7 +162,7 @@ void print (double t) {
 int main (int argc, char** argv) {
     double t = 0.0;
     printHeader ();
-    init(v);
+    init();
     for (t = 0.0; t < end_of_times; t+=delta_t) {
         I = constant_current(t);
         backward_euler(I);

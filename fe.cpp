@@ -1,3 +1,16 @@
+/*
+ *                           Solving HH model using Forward Euler Method
+ *
+ *     dv      1   /                                                        \
+ *     ---  = ----*| I - g_Na*m³*h(v-E_Na) - G_K*n⁴(v - E_K) - gl(v - El)   |
+ *     dt      Cm  \                                                        /
+ *
+ *     dn
+ *     ---  =  alpha_n(v)*(1-n) - beta_n(v)*(n)
+ *     dt
+ *
+ *     idem for m and h
+ */
 #include <iostream>
 #include <math.h>
 
@@ -8,32 +21,16 @@ static const double E_Na = 55.17;    // (mV)
 static const double E_l  = -49.42;   // (mV)
 static       double g_K  = 0.36;     //  ion channels conductances (mS/cm²)
 static       double g_Na = 1.2;      //  ion channels conductances (mS/cm²)
-//static       double g_K  = 0.0;     //  ion channels conductances (mS/cm²)
-//static       double g_Na = 0.0;      //  ion channels conductances (mS/cm²)
 static       double g_l  = 0.003;    //  ion channels conductances (mS/cm²)
-//static       double g_l  = 0.03;    //  ion channels conductances (mS/cm²)
 
-static double v_euler = -60.0;    //  Potential at t computed by Forward Euler method
-static double Cm      = 0.01;     //  Membrane capacitance (µF/cm²)
+static double v_euler = -60.0;       //  Potential at t computed by Forward Euler method
+static double Cm      = 0.01;        //  Membrane capacitance (µF/cm²)
 static double I       = 0.0;
 static double n = 0.0;
 static double m = 0.0;
 static double h = 0.0;
 static const double delta_t = 0.05; // timestep size (ms) 
 static const double end_of_times = 25.0;
-/*
- *                           Solving HH model
- *
- *     dVm     1   /                                                        \
- *     ---  = ----*| I - g_Na*m³*h(v-E_Na) - G_K*n⁴(v - E_K) - gl(v - El)   |
- *     dt      Cm  \                                                        /
- *
- *     dn
- *     ---  =  alpha_n(v)*(1-n) - beta_n(v)*(n)
- *     dt
- *
- *     idem for m and h
- */
 
 double get_alpha_n (double v) {
     return (0.01*(v + 50.0))/(1 - exp(-(v + 50.0)/10.0));
@@ -120,10 +117,7 @@ int main (int argc, char** argv) {
     printHeader ();
     init(v_euler);
     for (t = 0.0; t < end_of_times; t+=delta_t) {
-        // forward_euler(pulse(t), v_euler);
-        // forward_euler(constant_current(t), v_euler);
         I = constant_current(t);
-//        I=0;
         forward_euler(I, v_euler);
         print (t);
     }

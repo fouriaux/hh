@@ -8,10 +8,7 @@ static const double E_Na = 55.17;    // (mV)
 static const double E_l  = -49.42;   // (mV)
 static       double g_K  = 0.36;     //  ion channels conductances (mS/cm²)
 static       double g_Na = 1.2;      //  ion channels conductances (mS/cm²)
-//static       double g_K  = 0.0;     //  ion channels conductances (mS/cm²)
-//static       double g_Na = 0.0;      //  ion channels conductances (mS/cm²)
 static       double g_l  = 0.003;    //  ion channels conductances (mS/cm²)
-//static       double g_l  = 0.03;    //  ion channels conductances (mS/cm²)
 
 static double v_euler = -60.0;    //  Potential at t computed by Forward Euler method
 static double Cm      = 0.01;     //  Membrane capacitance (µF/cm²)
@@ -124,10 +121,9 @@ int main (int argc, char** argv) {
         // forward_euler(pulse(t), v_euler);
         // forward_euler(constant_current(t), v_euler);
         I = constant_current(t);
-//        I=0;
         forward_euler(I, v_euler);
         print (t);
-        delta_t = 1.5*Cm/(m*m*m*h*g_Na + n*n*n*n*g_K + g_l);
+        delta_t = Cm/(m*m*m*h*g_Na + n*n*n*n*g_K + g_l);
     }
     return 0;
 }
