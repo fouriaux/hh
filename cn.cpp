@@ -10,6 +10,13 @@
  *     dt
  *
  *     idem for m and h
+ *
+ *
+ *     Crank Nicholson solution:
+ *     We first interleave time steps for v and all m,n,h computations.
+ *     
+ *
+ *
  */
 
 #include <iostream>
@@ -17,7 +24,7 @@
 
 static const double PERIOD = 0.1;
 
-static const double E_k  = -72.14;   // Resting potential of Potatium channel (mV)
+static const double E_K  = -72.14;   // Resting potential of Potatium channel (mV)
 static const double E_Na = 55.17;    // Resting potential of Sodium channel   (mV)
 static const double E_l  = -49.42;   // Resting potential of passive membrane (mV)
 static const double g_K  = 0.36;     //  ion channels conductances (mS/cm²)
@@ -38,9 +45,38 @@ static double n_prev     = 0.0;      // state variable at t = n-½
 static double m_prev     = 0.0;      // state variable at t = n-½
 static double h_prev     = 0.0;      // state variable at t = n-½
 
-static const double delta_t = 0.05; // timestep size (ms) 
+static const double delta_t = 0.025; // timestep size (ms) 
 static const double delta_t_inv = 1.0/ delta_t;
 static const double end_of_times = 25.0;
+
+#if 0
+double get_alpha_n (double v) {
+    return 0;
+}
+
+double get_beta_n  (double v) {
+    return 0;
+}
+
+double get_alpha_m (double v) {
+    return 0;
+}
+
+double get_beta_m (double v) {
+    return 0;
+}
+
+double get_alpha_h (double v) {
+    return 0;
+}
+
+double get_beta_h (double v) {
+    return 0;
+}
+
+#endif
+
+
 double get_alpha_n (double v) {
     return (0.01*(v + 50.0))/(1 - exp(-(v + 50.0)/10.0));
 }
@@ -64,69 +100,56 @@ double get_alpha_h (double v) {
 double get_beta_h (double v) {
     return 1/(1+exp(-0.1*(v+30.0)));
 }
-
 /*
- * Some backward Euler theory
+ * Some Crank Nicholson theory
  *
  * solving dv/dt = f(t,v) with v(0) = v₀ (-60mV in this particular case)
- * Backward Euler Method is
+ * Crank-Nicholson Method is
  * 
- *    v₊₁ = v + Δt*f(t₊₁,v₊₁)
- * →  v₊₁ - v - Δt*f(t₊₁, v₊₁) = 0
+ *                   f(v₊₁) + f(v)
+ *    v₊₁ = v + Δt * -------------
+ *                         2
  *
  * In our case we will consider 2 interleaved intervals 
  * to solve "independently" channel gates and potential equations.
  * 
  * v will be solve with initial t'₀ = t₀+½
- * then when computing gates equations we consider v to be constant on t = [n, n₊₁]
- * conversely when computing v we will consider channels   constant on t = [n₋½;n₊½]
- * 
- * 
+ * When computing gates equations on interval t = [n, n₊₁], 
+ *    v is "constant" with value determined in middle of [n, n₊₁] at t₊½.
+ * Conversely when computing v we will consider channels constant 
+ *    on interval t = [n₋½;n₊½]
+ *
+ *
  */
 
 
-
-
-void backward_euler (double I) {
+void crank_nicholson (double I) {
 
     // solve potential
     double G_Na = g_Na*m*m*m*h;
     double G_K  = g_K*n*n*n*n;
-    double new_v = 2*delta_t * ( I + G_Na*E_Na + G_K*E_k + g_l*E_l);
-    //     new_v = ------------------------------------------------
-    new_v       /= (2*Cm + (G_Na + G_K + g_l)*delta_t);
-    new_v += v;
-    v_prev = v;
+//    G_K = 0; G_Na = 0;
+    double new_v     =  (2*delta_t*(g_l*E_l+G_Na*E_Na+G_K*E_K+I)) - v*(delta_t*(g_l+G_Na+G_K) - 2*Cm);
+    new_v           /=  (2*Cm + delta_t*(g_l+G_Na+G_K));
     v = new_v;
     
     // compute channel states
      double gamma_n       = (get_alpha_n(v) + get_beta_n(v))/2.0;
-     double new_n =  get_alpha_n(v)*1.0/(delta_t_inv + gamma_n); 
-     new_n -= n_prev *(gamma_n - delta_t_inv)/(gamma_n + delta_t_inv);
-     n_prev = n;
+     double new_n =  get_alpha_n(v)/(delta_t_inv + gamma_n); 
+     new_n -= n *(gamma_n - delta_t_inv)/(gamma_n + delta_t_inv);
      n = new_n;
      
      double  gamma_m       = (get_alpha_m(v) + get_beta_m(v))/2.0;
-     double new_m =  get_alpha_m(v)*1.0/(delta_t_inv + gamma_m); 
-     new_m       -= n_prev *(gamma_m - delta_t_inv)/(gamma_m + delta_t_inv);
-     m_prev = m;
-     m = new_m; 
+     double new_m =  get_alpha_m(v)/(delta_t_inv + gamma_m); 
+     new_m       -= m *(gamma_m - delta_t_inv)/(gamma_m + delta_t_inv);
+     m = new_m;
      
      double gamma_h       = (get_alpha_h(v) + get_beta_h(v))/2.0;
-     double new_h =  get_alpha_h(v)*1.0/(delta_t_inv + gamma_h); 
-     new_h       -= n_prev *(gamma_h - delta_t_inv)/(gamma_h + delta_t_inv);
-     h_prev = h;
+     double new_h =  get_alpha_h(v)/(delta_t_inv + gamma_h); 
+     new_h       -= h *(gamma_h - delta_t_inv)/(gamma_h + delta_t_inv);
      h = new_h;
 }
 
-void init () {
-    v = -60.0;
-    v_prev = -60.0;
-    I = 0;
-    for (double init_t = 0; init_t < 20.0; init_t+=delta_t) {
-        backward_euler(I);
-    }
-}
 
 double zero_current (double t) {
     return 0.0;
@@ -159,13 +182,24 @@ void print (double t) {
              << I << std::endl;
 }
 
+void init () {
+    v = -60.0;
+    v_prev = -60.0;
+    I = 0;
+    for (double init_t = 0; init_t < 20.0; init_t+=delta_t) {
+//        print(init_t);
+        crank_nicholson(I);
+    }
+}
+
 int main (int argc, char** argv) {
     double t = 0.0;
     printHeader ();
     init();
     for (t = 0.0; t < end_of_times; t+=delta_t) {
         I = constant_current(t);
-        backward_euler(I);
+        //I = 0;
+        crank_nicholson(I);
         print (t);
     }
     return 0;
