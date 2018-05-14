@@ -13,7 +13,7 @@
  */
 #include <iostream>
 #include <math.h>
-
+#include <cstdlib>
 static const double PERIOD = 0.1;
 
 static const double E_k  = -72.14;   // (mV)
@@ -29,8 +29,8 @@ static double I       = 0.0;
 static double n = 0.0;
 static double m = 0.0;
 static double h = 0.0;
-static const double delta_t = 0.05; // timestep size (ms) 
-static const double end_of_times = 25.0;
+static double delta_t = 0.005; // timestep size (ms) 
+static const double end_of_times = 200.0;
 
 double get_alpha_n (double v) {
     return (0.01*(v + 50.0))/(1 - exp(-(v + 50.0)/10.0));
@@ -114,6 +114,9 @@ void print (double t) {
 
 int main (int argc, char** argv) {
     double t = 0.0;
+    if(argc == 2) {
+        delta_t = atof(argv[1]);
+    }
     printHeader ();
     init(v_euler);
     for (t = 0.0; t < end_of_times; t+=delta_t) {

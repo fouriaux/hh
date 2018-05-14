@@ -14,13 +14,14 @@
  *
  *     Crank Nicholson solution:
  *     We first interleave time steps for v and all m,n,h computations.
- *     
+ *
  *
  *
  */
 
 #include <iostream>
 #include <math.h>
+#include <cstdlib>
 
 static const double PERIOD = 0.1;
 
@@ -45,9 +46,9 @@ static double n_prev     = 0.0;      // state variable at t = n-½
 static double m_prev     = 0.0;      // state variable at t = n-½
 static double h_prev     = 0.0;      // state variable at t = n-½
 
-static const double delta_t = 0.025; // timestep size (ms) 
-static const double delta_t_inv = 1.0/ delta_t;
-static const double end_of_times = 25.0;
+static double delta_t = 0.005; // timestep size (ms) 
+static double delta_t_inv = 1.0/ delta_t;
+static const double end_of_times = 200.0;
 
 #if 0
 double get_alpha_n (double v) {
@@ -194,6 +195,10 @@ void init () {
 
 int main (int argc, char** argv) {
     double t = 0.0;
+    if(argc == 2) {
+        delta_t = atof(argv[1]);
+        delta_t_inv = 1.0/ delta_t;
+    }
     printHeader ();
     init();
     for (t = 0.0; t < end_of_times; t+=delta_t) {
