@@ -88,9 +88,9 @@ double get_beta_h (double v) {
  * 
  * v will be solve with initial t'₀ = t₀+½
  * When computing gates equations on interval t = [n, n₊₁], 
- *    v is "constant" with value determined in middle of [n, n₊₁] at t₊½.
+ *    v is "constant" with value determined in middle of [n, n₊₁] at n₊½.
  * Conversely when computing v we will consider channels constant 
- *    on interval t = [n₋½;n₊½]
+ *    on interval t = [n₋½;n₊½] with value determined at n.
  *
  *
  */
