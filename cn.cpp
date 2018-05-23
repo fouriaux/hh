@@ -50,34 +50,6 @@ static double delta_t = 0.005; // timestep size (ms)
 static double delta_t_inv = 1.0/ delta_t;
 static const double end_of_times = 200.0;
 
-#if 0
-double get_alpha_n (double v) {
-    return 0;
-}
-
-double get_beta_n  (double v) {
-    return 0;
-}
-
-double get_alpha_m (double v) {
-    return 0;
-}
-
-double get_beta_m (double v) {
-    return 0;
-}
-
-double get_alpha_h (double v) {
-    return 0;
-}
-
-double get_beta_h (double v) {
-    return 0;
-}
-
-#endif
-
-
 double get_alpha_n (double v) {
     return (0.01*(v + 50.0))/(1 - exp(-(v + 50.0)/10.0));
 }
