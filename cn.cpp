@@ -101,7 +101,6 @@ void crank_nicholson (double I) {
     // solve potential
     double G_Na = g_Na*m*m*m*h;
     double G_K  = g_K*n*n*n*n;
-//    G_K = 0; G_Na = 0;
     double new_v     =  (2*delta_t*(g_l*E_l+G_Na*E_Na+G_K*E_K+I)) - v*(delta_t*(g_l+G_Na+G_K) - 2*Cm);
     new_v           /=  (2*Cm + delta_t*(g_l+G_Na+G_K));
     v = new_v;
@@ -160,7 +159,6 @@ void init () {
     v_prev = -60.0;
     I = 0;
     for (double init_t = 0; init_t < 20.0; init_t+=delta_t) {
-//        print(init_t);
         crank_nicholson(I);
     }
 }
@@ -175,7 +173,6 @@ int main (int argc, char** argv) {
     init();
     for (t = 0.0; t < end_of_times; t+=delta_t) {
         I = constant_current(t);
-        //I = 0;
         crank_nicholson(I);
         print (t);
     }
